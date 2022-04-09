@@ -2,53 +2,68 @@
 #include <time.h>
 #include <stdlib.h>
 #define nullptr NULL
-void store(int row, int col,float *x){
- for (int i = 0; i < row; ++i)
+
+struct matrix{
+    float *ptr;
+    int row;
+    int col;
+};
+
+void store(struct matrix x){
+ for (int i = 0; i < x.row; ++i)
   {
-    for (int j = 0; j < col; j++)
+    for (int j = 0; j < x.col; j++)
     {
-        x[i+j]=rand()%10+1;
+        x.ptr[i+j]=rand()%10+1;
     }
   }
   return ;
 }
-
-void print(int row, int col,float *x){
- for (int i = 0; i < row; ++i)
+void init(struct matrix x){
+     for (int i = 0; i < x.row; ++i)
   {
-    for (int j = 0; j < col; j++)
+    for (int j = 0; j < x.col; j++)
     {
-      printf("x %d, y %d = %f\n", i , j , x[i+j]);
+        x.ptr[i+j]=0;
+    }
+  }
+  return ;
+}
+void print(struct matrix x){
+ for (int i = 0; i < x.row; ++i)
+  {
+    for (int j = 0; j < x.col; j++)
+    {
+      printf("x %d, y %d = %f\n", i , j , x.ptr[i+j]);
     }
   }
   printf("%s","--------------------------------\n");
   return ; 
 }
 
-float *multiplyMatrix(float *m1, float row1, int col1, float *m2, int row2, int col2)
-{
-    if (col1 != row2)
-        return nullptr;
-
-    float* ret = (float*) malloc(row1*col2);
+void multiplyMatrix(struct matrix m1,struct matrix m2,struct matrix m3,int start,int end){
+    if (m1.col != m2.row){
+        printf("%s","errore moltiplicazione matrici");
+        exit(1);
+    }
     int i,j,k;
-    for(i = 0; i < row1; i++) {
-        for(j = 0; j < col2; j++) {
-            for(k = 0; k < row2; k++) {
-                ret[i+j] += m1[i+k] * m2[k+j];
+    for(; start <end; start++) {
+        for(j = 0; j < m2.col; j++) {
+            for(k = 0; k < m2.row; k++) {
+                m3.ptr[start+j] += m1.ptr[start+k] * m2.ptr[k+j];
             }
         }
     }
-
-    return ret;
+    
 }
+
 int main() {
-    clock_t start = clock();
+    clock_t s = clock();
     // dichiarazione puntatori a matrici
-    float *a,*b,*c,*r,*cr;
+    struct matrix a,b,c,r,cr,aux;
     srand(time(NULL));
     //Assegnazione M,N,P
-    int m,n,p;
+    int m,n,p,nblock,end,start=0;
     printf("%s", "Inserisci M:");
     scanf("%d",&m);
     printf("%s", "Inserisci N:");
@@ -60,31 +75,56 @@ int main() {
     printf("N: %d",n);
     printf("M: %d\n",p);
     //Creazioni Matrici A,B,C
-    a= (float*) malloc(m*n);
-    b= (float*) malloc(n*p);
-    c= (float*) malloc(p*m);
+    a.ptr= (float*) malloc(m*n);
+    b.ptr= (float*) malloc(n*p);
+    c.ptr= (float*) malloc(p*m);
+    a.row=m;
+    a.col=n;
+    b.row=n;
+    b.col=p;
+    c.row=p;
+    c.col=m;
     //inserimento valori matrici
-    store(m,n,a);
-    store(n,p,b);
-    store(p,m,c);
+    store(a);
+    store(b);
+    store(c);
     //Stampa matrici
-    print(m,n,a);
-    print(n,p,b);
-    print(p,m,c);
-    //Prodotto tra matrici
-    r=multiplyMatrix(a,m,n,b,n,p);
-    cr=multiplyMatrix(c,p,m,r,m,p);
-    printf("%s","R=(A*B)\n");
-    print(m,p,r);
-    printf("%s","Finale=(C*R)\n");
-    print(p,p,cr);
+    print(a);
+    print(b);
+    print(c);
+    printf("%s", "Inserisci numero di blocchi:");
+    scanf("%d",&nblock);  
+    //creo matrice risultato   
+    r.ptr=(float*) malloc(m*p);
+    r.row=m;
+    r.col=p;
+    init(r);
+    //prendo i vari blocchi INIZIO
+    if(a.row!=nblock){
+        end=a.row/nblock;
+        for (int k = 0; k <nblock;k++)
+        {
+            multiplyMatrix(a,b,r,start,end);
+            start=end;
+            end+=end;
+        }
+    }
+    else{
+
+        for (int k = 1; k <=nblock;k++)
+            {   end=k;
+                multiplyMatrix(a,b,r,start,end);
+                start=end;
+            }       
+    }
+    print(r);
+    //PRENDO I VARI BLOCCHI FINE
     //liberazione memoria
-    free(a);
-    free(b);
-    free(c);
-    free(r);
-    free(cr);
-    clock_t end = clock();
-    printf("Tempo di esecuzione =  %f secondi \n", ((double)(end - start)) / CLOCKS_PER_SEC);
+    free(a.ptr);
+    free(b.ptr);
+    free(c.ptr);
+    free(r.ptr);
+    clock_t e = clock();
+    printf("Tempo di esecuzione =  %f secondi \n", ((double)(e - s)) / CLOCKS_PER_SEC);
     return 0;
 }
