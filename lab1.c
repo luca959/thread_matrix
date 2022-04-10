@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#define nullptr NULL
+#include <pthread.h>
 
 struct matrix{
     float *ptr;
@@ -14,7 +14,7 @@ void store(struct matrix x){
   {
     for (int j = 0; j < x.col; j++)
     {
-        x.ptr[i+j]=rand()%10+1;
+        x.ptr[i*x.col+j]=rand()%10+1;
     }
   }
   return ;
@@ -24,7 +24,7 @@ void init(struct matrix x){
   {
     for (int j = 0; j < x.col; j++)
     {
-        x.ptr[i+j]=0;
+        x.ptr[i*x.col+j]=0;
     }
   }
   return ;
@@ -34,33 +34,34 @@ void print(struct matrix x){
   {
     for (int j = 0; j < x.col; j++)
     {
-      printf("x %d, y %d = %f\n", i , j , x.ptr[i+j]);
+      printf("x %d, y %d = %f\n", i , j , x.ptr[i*x.col+j]);
     }
   }
   printf("%s","--------------------------------\n");
   return ; 
 }
-
 void multiplyMatrix(struct matrix m1,struct matrix m2,struct matrix m3,int start,int end){
     if (m1.col != m2.row){
         printf("%s","errore moltiplicazione matrici");
         exit(1);
     }
-    int i,j,k;
-    for(; start <end; start++) {
-        for(j = 0; j < m2.col; j++) {
-            for(k = 0; k < m2.row; k++) {
-                m3.ptr[start+j] += m1.ptr[start+k] * m2.ptr[k+j];
+    for (int i = start; i < end; ++i) {
+        for (int k = 0; k < m2.col; ++k) {
+            float acc = 0;
+            for (int j = 0; j < m1.col; ++j){
+                acc += m1.ptr[i * m1.col + j] * m2.ptr[j * m2.col + k];
             }
+            m3.ptr[i * m3.col + k] = acc;
         }
+        printf("\n");
     }
-    
+  
 }
 
 int main() {
     clock_t s = clock();
     // dichiarazione puntatori a matrici
-    struct matrix a,b,c,r,cr,aux;
+    struct matrix a,b,c,r,cr;
     srand(time(NULL));
     //Assegnazione M,N,P
     int m,n,p,nblock,end,start=0;
@@ -92,8 +93,13 @@ int main() {
     print(a);
     print(b);
     print(c);
-    printf("%s", "Inserisci numero di blocchi:");
+    printf("%s", "Inserisci numero di blocchi di R=A*B:");
     scanf("%d",&nblock);  
+    if (nblock > a.row)
+    {
+        printf("%s","errore numero di blocchi > numero di righe");
+        exit(1);
+    }
     //creo matrice risultato   
     r.ptr=(float*) malloc(m*p);
     r.row=m;
@@ -107,6 +113,7 @@ int main() {
             multiplyMatrix(a,b,r,start,end);
             start=end;
             end+=end;
+            printf("\n");
         }
     }
     else{
@@ -115,15 +122,46 @@ int main() {
             {   end=k;
                 multiplyMatrix(a,b,r,start,end);
                 start=end;
+
             }       
     }
     print(r);
+    cr.ptr=(float*) malloc(p*p);
+    cr.row=p;
+    cr.col=p;
+    init(cr);
+    printf("%s", "Inserisci numero di blocchi di C*R:");
+    scanf("%d",&nblock);  
+    start=0;
+     if(a.row!=nblock){
+        end=a.row/nblock;
+        for (int k = 0; k <nblock;k++)
+        {
+            multiplyMatrix(c,r,cr,start,end);
+            start=end;
+            end+=end;
+            printf("\n");
+        }
+    }
+    else{
+
+        for (int k = 1; k <=nblock;k++)
+            {   end=k;
+                multiplyMatrix(c,r,cr,start,end);
+                start=end;
+            }       
+    }
+
+     print(cr);
+
     //PRENDO I VARI BLOCCHI FINE
     //liberazione memoria
     free(a.ptr);
     free(b.ptr);
     free(c.ptr);
     free(r.ptr);
+    free(cr.ptr);
+
     clock_t e = clock();
     printf("Tempo di esecuzione =  %f secondi \n", ((double)(e - s)) / CLOCKS_PER_SEC);
     return 0;
