@@ -41,24 +41,26 @@ void *mul(void *pt) {
   int myid;
   int it=M/BLOCK;
   myid = *((int *)pt);
+  int x=it+(myid*2);
   printf("Thread %d\n", myid);
-    for (int i = myid; i < myid+it; ++i) {
-          printf("i:  %d\n", i);
+    for (int i=myid*2; i <x; ++i) {
+        printf("i: %d \n",i);
+        printf("it+i: %d  \n",x);
 
-        for (int k = 0; k < P; ++k) {
+        for  (int k = 0; k < P; ++k) {
             for (int j = 0; j < N; ++j){
                 R[i][k] +=A[i][j] *B[j][k];
             }
         }
     }
+
   // barriera
     pthread_barrier_wait(&barrier);
     
-    for (int i = myid; i < myid+it; ++i) {
-          printf("i:  %d\n", i);
-        for (int k = 0; k < P; ++k) {
-            for (int j = 0; j < M; ++j){
-                CR[i][k] +=C[i][j] *R[j][k];
+    for ( int l=myid*2; l< x; ++l) {
+        for (int m = 0; m < P; ++m) {
+            for (int n = 0; n < M; ++n){
+                CR[l][m] +=C[l][n] *R[n][m];
             }
         }
     }
