@@ -6,7 +6,7 @@
 #define M 8
 #define N 8
 #define P 8
-#define BLOCK 4
+#define BLOCK 8
 float A[M][N];
 float B[N][P];
 float C[P][M];
@@ -40,10 +40,12 @@ void print(int row,int col,float x[][col]){
 void *mul(void *pt) {
   int myid;
   int it=M/BLOCK;
+  printf("%d",it);
   myid = *((int *)pt);
-  int x=it+(myid*2);
+  int x=it+(myid*it);
   printf("Thread %d\n", myid);
-    for (int i=myid*2; i <x; ++i) {
+    for (int i=myid*it; i <x; ++i) {
+      
         printf("i: %d \n",i);
         printf("it+i: %d  \n",x);
 
@@ -57,7 +59,7 @@ void *mul(void *pt) {
   // barriera
     pthread_barrier_wait(&barrier);
     
-    for ( int l=myid*2; l< x; ++l) {
+    for ( int l=myid*it; l< x; ++l) {
         for (int m = 0; m < P; ++m) {
             for (int n = 0; n < M; ++n){
                 CR[l][m] +=C[l][n] *R[n][m];
