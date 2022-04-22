@@ -36,7 +36,7 @@ void print(int row,int col,float x[][col]){
   }
   printf("%s","--------------------------------\n");
 }
-
+// C*(A*B)
 void *mul(void *pt) {
   int myid;
   int it=M/BLOCK;
